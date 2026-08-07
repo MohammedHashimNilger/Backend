@@ -18,10 +18,14 @@ app.use(
   }),
 );
 
-app.get("/api/health", (req, res) => {
+// import the routes
+import healthCheckRouter from "./routes/healthCheck.routes.js";
+
+app.use("/api/v1/healthcheck", healthCheckRouter);
+
+app.get("/", (req, res) => {
   res.json({
-    status: "ok",
-    message: "Server is running",
+    message: "Welcome Hashim rangrez",
   });
 });
 
