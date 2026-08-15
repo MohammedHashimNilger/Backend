@@ -1,4 +1,3 @@
-import Mailgen from "mailgen";
 import mailgen from "mailgen";
 import nodemailer from "nodemailer";
 
@@ -81,4 +80,8 @@ const forgotPasswordMailGenContent = (username, passwordResetUrl) => {
   };
 };
 
-export { forgotPasswordMailGenContent, emailVerificationMailGenContent };
+export {
+  forgotPasswordMailGenContent,
+  emailVerificationMailGenContent,
+  sendEmail,
+};
