@@ -1,15 +1,20 @@
 import { User } from "../models/User.models.js";
 import { asyncHandler } from "../utils/async-handler.js";
-import { ApiError } from "../utils/api-error.js";
 import jwt from "jsonwebtoken";
 
-export const verifyJWT = asyncHandler(async (req, res, next) => {
+/**
+ * Lenient authentication middleware.
+ * Attaches `req.user` if a valid access token is present,
+ * but does NOT throw if the token is missing, expired, or invalid.
+ * Use this for endpoints like logout where we always want to proceed.
+ */
+export const optionalAuth = asyncHandler(async (req, res, next) => {
   const token =
     req.cookies?.accessToken ||
     req.header("Authorization")?.replace("Bearer ", "");
 
   if (!token) {
-    throw new ApiError(401, "Unauthorized request");
+    return next();
   }
 
   try {
@@ -18,13 +23,12 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
       "-password -refreshToken -emailVerificationToken -emailVerificationExpiry",
     );
 
-    if (!user) {
-      throw new ApiError(401, "Invalid access token");
+    if (user) {
+      req.user = user;
     }
-
-    req.user = user;
-    next();
   } catch (error) {
-    throw new ApiError(401, "Invalid access token");
+    // Token is invalid/expired — that's fine, just proceed without req.user
   }
+
+  next();
 });

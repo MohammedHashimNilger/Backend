@@ -85,11 +85,13 @@ const registerUSer = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
   const { email, password, username } = req.body;
 
-  if (!username || !email) {
+  if (!username && !email) {
     throw new ApiError(400, "Username or email is required");
   }
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({
+    $or: [{ email }, { username }],
+  });
 
   if (!user) {
     throw new ApiError(400, "User does not exist");
@@ -110,8 +112,8 @@ const login = asyncHandler(async (req, res) => {
   );
 
   const options = {
-    httpsOnly: true,
-    secure: true,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
   };
 
   return res
@@ -131,4 +133,32 @@ const login = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerUSer, login };
+const logoutUser = asyncHandler(async (req, res) => {
+  // Best-effort: clear the refresh token from DB if we have a user
+  if (req.user?._id) {
+    await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $set: {
+          refreshToken: "",
+        },
+      },
+      {
+        new: true,
+      },
+    );
+  }
+
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged out"));
+});
+
+export { registerUSer, login, logoutUser };
